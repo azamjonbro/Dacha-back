@@ -8,7 +8,10 @@ const Booking = require("../models/Booking.model");
  */
 exports.createDacha = async (req, res) => {
   try {
-    const { name, adminId } = req.body;
+    const { name } = req.body;
+
+    // adminId token ichidan olinadi
+    const adminId = req.user._id;
 
     // validation
     if (!name || name.trim().length < 2) {
@@ -19,7 +22,7 @@ exports.createDacha = async (req, res) => {
 
     const dacha = await Dacha.create({
       name: name.trim(),
-      adminId: adminId || null
+      adminId
     });
 
     return res.status(201).json({
@@ -33,6 +36,7 @@ exports.createDacha = async (req, res) => {
     });
   }
 };
+
 
 /**
  * UPDATE DACHA
