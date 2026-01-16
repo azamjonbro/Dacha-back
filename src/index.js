@@ -15,4 +15,4 @@ app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/dacha", require("./routes/dacha.routes"));
 app.use("/api/booking", require("./routes/booking.routes"));
 
-app.listen(4000, () => console.log("Server running"));
+app.listen(process.env.PORT || 4000, () => console.log("Server running"));
