@@ -8,10 +8,7 @@ const Booking = require("../models/Booking.model");
  */
 exports.createDacha = async (req, res) => {
   try {
-    const { name } = req.body;
-
-    // adminId token ichidan olinadi
-    const adminId = req.user._id;
+    const { name, adminId } = req.body;
 
     // validation
     if (!name || name.trim().length < 2) {
@@ -78,10 +75,6 @@ exports.updateDacha = async (req, res) => {
   }
 };
 
-/**
- * GET MY DACHAS
- * Admin -> faqat o‘ziga biriktirilgan dachalar
- */
 exports.getMyDachas = async (req, res) => {
   try {
     if (!req.user?.id) {
