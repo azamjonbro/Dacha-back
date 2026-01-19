@@ -178,7 +178,7 @@ exports.getAllDachas = async (req, res) => {
   }
 };
 
-const Dacha = require("../models/Dacha");
+
 
 exports.deleteDacha = async (req, res) => {
   try {
