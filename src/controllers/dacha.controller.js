@@ -178,3 +178,35 @@ exports.getAllDachas = async (req, res) => {
   }
 };
 
+const Dacha = require("../models/Dacha");
+
+exports.deleteDacha = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || id.length !== 24) {
+      return res.status(400).json({
+        message: "Noto‘g‘ri Dacha ID"
+      });
+    }
+
+    const deleted = await Dacha.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({
+        message: "Dacha topilmadi"
+      });
+    }
+
+    return res.status(200).json({
+      message: "Dacha muvaffaqiyatli o‘chirildi",
+      deleted
+    });
+
+  } catch (error) {
+    console.error("deleteDacha error:", error.message);
+    return res.status(500).json({
+      message: "Dachani o‘chirishda server xatosi"
+    });
+  }
+};
