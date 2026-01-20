@@ -2,7 +2,7 @@ const Booking = require("../models/Booking.model");
 const Dacha = require("../models/Dacha.model");
 
 const normalizeDate = (date) => {
-  const d = new Date(date + "T00:00:00");  // ✅ LOCAL sifatida parse qiladi
+  const d = new Date(date + "T00:00:00"); 
   d.setHours(0, 0, 0, 0);
   return d;
 };
