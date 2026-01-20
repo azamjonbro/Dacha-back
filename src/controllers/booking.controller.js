@@ -2,11 +2,10 @@ const Booking = require("../models/Booking.model");
 const Dacha = require("../models/Dacha.model");
 
 const normalizeDate = (date) => {
-  const d = new Date(date);
+  const d = new Date(date + "T00:00:00");  // ✅ LOCAL sifatida parse qiladi
   d.setHours(0, 0, 0, 0);
   return d;
 };
-
 const deactivateExpiredBookings = async () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -222,3 +221,93 @@ exports.getBookingHistory = async (req, res) => {
     });
   }
 };
+
+exports.deleteBookingDay = async (req, res) => {
+  try {
+    const { id } = req.params; 
+    const { day } = req.body;   
+
+    if (!day) {
+      return res.status(400).json({ message: "day majburiy" });
+    }
+
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking topilmadi" });
+    }
+
+    const dacha = await Dacha.findOne({
+      _id: booking.dachaId,
+      adminId: req.user.id
+    });
+
+    if (!dacha) {
+      return res.status(403).json({ message: "Ruxsat yo‘q" });
+    }
+
+    const removeDay = normalizeDate(day);
+    const start = normalizeDate(booking.startDate);
+    const end = normalizeDate(booking.endDate);
+
+    if (removeDay < start || removeDay > end) {
+      return res.status(400).json({
+        message: "Bu sana booking oralig‘ida emas"
+      });
+    }
+
+
+    if (start.getTime() === end.getTime()) {
+      await booking.deleteOne();
+      return res.json({ message: "Booking o‘chirildi (1 kun edi)" });
+    }
+
+    // BOSHIDAN KESISH
+    if (removeDay.getTime() === start.getTime()) {
+      booking.startDate = new Date(start.setDate(start.getDate() + 1));
+      await booking.save();
+      return res.json({ message: "Boshlanishdan 1 kun olib tashlandi" });
+    }
+
+    // OXIRIDAN KESISH
+    if (removeDay.getTime() === end.getTime()) {
+      booking.endDate = new Date(end.setDate(end.getDate() - 1));
+      await booking.save();
+      return res.json({ message: "Oxiridan 1 kun olib tashlandi" });
+    }
+
+    // O‘RTADAN BO‘LISH
+    const firstPartEnd = new Date(removeDay);
+    firstPartEnd.setDate(firstPartEnd.getDate() - 1);
+
+    const secondPartStart = new Date(removeDay);
+    secondPartStart.setDate(secondPartStart.getDate() + 1);
+
+    // eski bookingni update qilamiz
+    booking.endDate = firstPartEnd;
+    await booking.save();
+
+    // yangi booking yaratamiz
+    await Booking.create({
+      dachaId: booking.dachaId,
+      startDate: secondPartStart,
+      endDate: end,
+      OrderedUser: booking.OrderedUser,
+      totalPrice: booking.totalPrice,
+      avans: booking.avans,
+      phone1: booking.phone1,
+      phone2: booking.phone2,
+      createdBy: booking.createdBy,
+      isActive: true
+    });
+
+    return res.json({
+      message: "Booking o‘rtadan ikkiga bo‘lindi va sana olib tashlandi"
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Bookingdan kun o‘chirishda server xatosi"
+    });
+  }
+};
+

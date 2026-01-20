@@ -181,8 +181,11 @@ exports.getAllDachas = async (req, res) => {
 
 
 exports.deleteDacha = async (req, res) => {
+
+  
   try {
     const { id } = req.params;
+    
 
     if (!id || id.length !== 24) {
       return res.status(400).json({

@@ -8,6 +8,6 @@ router.use(auth, role("admin","superadmin"));
 router.post("/", c.createDacha);
 router.put("/:id", c.updateDacha);
 router.get("/", c.getAllDachas);
-router.delete("/", c.deleteDacha)
+router.delete("/:id", c.deleteDacha)
 
 module.exports = router;
