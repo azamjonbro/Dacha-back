@@ -2,9 +2,8 @@ const Booking = require("../models/Booking.model");
 const Dacha = require("../models/Dacha.model");
 
 const normalizeDate = (date) => {
-  const d = new Date(date + "T00:00:00");  // ✅ LOCAL sifatida parse qiladi
-  d.setHours(0, 0, 0, 0);
-  return d;
+  const d = new Date(date);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 };
 const deactivateExpiredBookings = async () => {
   const today = new Date();
