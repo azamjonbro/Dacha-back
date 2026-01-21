@@ -8,5 +8,6 @@ router.use(auth, role("admin", "superadmin"));
 router.post("/", c.createBooking);
 router.put("/:id", c.updateBooking);
 router.get("/", c.getBookings);
+router.delete("/",c.deleteBooking)
 
 module.exports = router;
