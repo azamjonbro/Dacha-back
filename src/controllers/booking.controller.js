@@ -62,6 +62,7 @@ exports.createBooking = async (req, res) => {
 
     const conflict = await Booking.findOne({
       dachaId,
+      isActive:true,
       startDate: { $lte: end },
       endDate: { $gte: start }
     });
