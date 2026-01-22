@@ -89,22 +89,27 @@ exports.createBooking = async (req, res) => {
 
 
     const message = `
-🏡 <b>Yangi booking yaratildi</b>
+🏡 <b>Yangi booking</b>
 
-👤 Buyurtmachi: <b>${OrderedUser || "Noma'lum"}</b>
-📅 Sana: <b>${start.toLocaleDateString()} → ${end.toLocaleDateString()}</b>
-💰 Umumiy summa: <b>${totalPrice || 0}</b>
-💵 Avans: <b>${avans || 0}</b>
-📞 Tel: ${phone1 || "-"} ${phone2 ? ` / ${phone2}` : ""}
+👤 ${OrderedUser || "Noma'lum"}
+📅 ${start.toLocaleDateString()} → ${end.toLocaleDateString()}
+💰 ${totalPrice}
+💵 Avans: ${avans}
+📞 ${phone1 || "-"} ${phone2 ? `/ ${phone2}` : ""}
 
-🆔 Booking ID: <code>${booking._id}</code>
+🆔 <code>${booking._id}</code>
 `;
-    try {
-      await sendTelegramMessage(message);
-    } catch (tgError) {
-      console.error("Telegram yuborishda xato:", tgError.message);
-    }
 
+
+try {
+      await sendTelegramMessage(message);
+    } catch (err) {
+      console.error(
+        "TELEGRAM ERROR:",
+        err.response?.status,
+        err.response?.data || err.message
+      );
+    }
     return res.status(201).json({
       message: "Booking muvaffaqiyatli yaratildi",
       data: booking
