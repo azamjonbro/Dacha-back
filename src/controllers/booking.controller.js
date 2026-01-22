@@ -112,6 +112,7 @@ exports.updateBooking = async (req, res) => {
     const dacha = await Dacha.findOne({
       _id: booking.dachaId,
       adminId: req.user.id
+      
     });
 
     if (!dacha) {
@@ -137,6 +138,7 @@ exports.updateBooking = async (req, res) => {
     const conflict = await Booking.findOne({
       _id: { $ne: booking._id },
       dachaId: booking.dachaId,
+      isActive:true,
       startDate: { $lte: newEnd },
       endDate: { $gte: newStart }
     });
