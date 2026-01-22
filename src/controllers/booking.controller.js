@@ -104,29 +104,24 @@ exports.updateBooking = async (req, res) => {
 
     const booking = await Booking.findById(id);
     if (!booking) {
-      return res.status(404).json({
-        message: "Booking topilmadi"
-      });
+      return res.status(404).json({ message: "Booking topilmadi" });
     }
 
     const dacha = await Dacha.findOne({
       _id: booking.dachaId,
       adminId: req.user.id
-      
     });
 
     if (!dacha) {
-      return res.status(403).json({
-        message: "Bu bookingni o‘zgartirishga ruxsat yo‘q"
-      });
+      return res.status(403).json({ message: "Ruxsat yo‘q" });
     }
 
     const newStart = req.body.startDate
-      ? normalizeDate(req.body.startDate)
+      ? new Date(req.body.startDate + "T12:00:00")
       : booking.startDate;
 
     const newEnd = req.body.endDate
-      ? normalizeDate(req.body.endDate)
+      ? new Date(req.body.endDate + "T12:00:00")
       : booking.endDate;
 
     if (newStart > newEnd) {
@@ -138,29 +133,24 @@ exports.updateBooking = async (req, res) => {
     const conflict = await Booking.findOne({
       _id: { $ne: booking._id },
       dachaId: booking.dachaId,
-      isActive:true,
+      isActive: true,
       startDate: { $lte: newEnd },
       endDate: { $gte: newStart }
     });
 
     if (conflict) {
       return res.status(409).json({
-        message: "Bu sanalar oralig‘ida dacha band",
-        conflictBookingId: conflict._id
+        message: "Bu sanalar band"
       });
     }
 
     booking.startDate = newStart;
     booking.endDate = newEnd;
 
-    if (req.body.totalPrice !== undefined)
-      booking.totalPrice = req.body.totalPrice;
-    if (req.body.avans !== undefined)
-      booking.avans = req.body.avans;
-    if (req.body.phone1 !== undefined)
-      booking.phone1 = req.body.phone1;
-    if (req.body.phone2 !== undefined)
-      booking.phone2 = req.body.phone2;
+    if (req.body.totalPrice !== undefined) booking.totalPrice = req.body.totalPrice;
+    if (req.body.avans !== undefined) booking.avans = req.body.avans;
+    if (req.body.phone1 !== undefined) booking.phone1 = req.body.phone1;
+    if (req.body.phone2 !== undefined) booking.phone2 = req.body.phone2;
 
     await booking.save();
 
@@ -168,12 +158,15 @@ exports.updateBooking = async (req, res) => {
       message: "Booking muvaffaqiyatli yangilandi",
       data: booking
     });
+
   } catch (error) {
+    console.error(error);
     return res.status(500).json({
-      message: "Booking yangilashda server xatosi"
+      message: "Server xatosi"
     });
   }
 };
+
 
 exports.getBookings = async (req, res) => {
   try {
