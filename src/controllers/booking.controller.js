@@ -243,6 +243,7 @@ exports.getBookingHistory = async (req, res) => {
 exports.deleteBooking = async (req, res) => {
   try {
     const { id } = req.params;
+    const mode = req.query.mode;
 
     const booking = await Booking.findById(id);
     if (!booking) {
@@ -263,17 +264,20 @@ exports.deleteBooking = async (req, res) => {
       });
     }
 
-
-    booking.isActive = false;
-    await booking.save();
-
-    return res.json({
-      message: "Band muvaffaqiyatli bekor qilindi",
-      data: {
-        _id: booking._id,
-        isActive: booking.isActive
-      }
-    });
+    if (mode === "full") {
+      await Booking.findByIdAndDelete(id);
+      return res.json({
+        message: "Band to'liq o'chirib yuborildi va statistikadan tushib qoldirildi",
+        data: { _id: booking._id, deletedCompletely: true }
+      });
+    } else {
+      booking.isActive = false;
+      await booking.save();
+      return res.json({
+        message: "Band muvaffaqiyatli bekor qilindi (Tarixda saqlandi)",
+        data: { _id: booking._id, isActive: booking.isActive }
+      });
+    }
   } catch (error) {
     return res.status(500).json({
       message: "Bandni o‘chirishda server xatosi"

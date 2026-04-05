@@ -181,11 +181,9 @@ exports.getAllDachas = async (req, res) => {
 
 
 exports.deleteDacha = async (req, res) => {
-
-  
   try {
     const { id } = req.params;
-    
+    const mode = req.query.mode;
 
     if (!id || id.length !== 24) {
       return res.status(400).json({
@@ -193,17 +191,29 @@ exports.deleteDacha = async (req, res) => {
       });
     }
 
-    const deleted = await Dacha.findByIdAndDelete(id);
-
-    if (!deleted) {
+    const dacha = await Dacha.findById(id);
+    if (!dacha) {
       return res.status(404).json({
         message: "Dacha topilmadi"
       });
     }
 
+    // Protect ownership
+    if (dacha.adminId.toString() !== req.user.id) {
+      return res.status(403).json({
+        message: "Ruxsat yo'q"
+      });
+    }
+
+    if (mode === "full") {
+      await Booking.deleteMany({ dachaId: id });
+    }
+
+    await Dacha.findByIdAndDelete(id);
+
     return res.status(200).json({
-      message: "Dacha muvaffaqiyatli o‘chirildi",
-      deleted
+      message: mode === "full" ? "Dacha va barcha bandliklar o'chirildi" : "Dacha o'chirildi, tarix saqlandi",
+      deleted: true
     });
 
   } catch (error) {
