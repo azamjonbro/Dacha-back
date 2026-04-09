@@ -11,11 +11,11 @@ const deactivateExpiredBookings = async () => {
 
   await Booking.updateMany(
     {
-      isActive: true,
+      status: { $in: ['confirmed', 'band'] },
       endDate: { $lt: today }
     },
     {
-      $set: { isActive: false }
+      $set: { status: 'finished', isActive: false }
     }
   );
 };
@@ -27,15 +27,14 @@ exports.createBooking = async (req, res) => {
       startDate,
       endDate,
       totalPrice,
-      avans,
-      phone1,
-      phone2,
-      OrderedUser
+      prepayment,
+      phone,
+      name
     } = req.body;
 
-    if (!dachaId || !startDate || !endDate) {
+    if (!dachaId || !startDate || !endDate || !name || !phone) {
       return res.status(400).json({
-        message: "dachaId, startDate va endDate majburiy"
+        message: "dachaId, startDate, endDate, name va phone majburiy"
       });
     }
 
@@ -62,7 +61,7 @@ exports.createBooking = async (req, res) => {
 
     const conflict = await Booking.findOne({
       dachaId,
-      isActive:true,
+      status: { $in: ['confirmed', 'band'] },
       startDate: { $lte: end },
       endDate: { $gte: start }
     });
@@ -79,42 +78,37 @@ exports.createBooking = async (req, res) => {
       startDate: start,
       endDate: end,
       totalPrice: totalPrice || 0,
-      avans: avans || 0,
-      phone1: phone1 || "",
-      phone2: phone2 || "",
+      prepayment: prepayment || 0,
+      phone: phone || "",
       createdBy: req.user.id,
-      isActive: true,
-      OrderedUser: OrderedUser || ""
+      status: 'confirmed',
+      name: name || ""
     });
 
-
     const message = `
-🏡 <b>Yangi booking</b>
+🏡 <b>Admin: Yangi booking qo'shildi</b>
 
-👤 ${OrderedUser || "Noma'lum"}
+👤 ${name || "Noma'lum"}
 📅 ${start.toLocaleDateString()} → ${end.toLocaleDateString()}
 💰 ${totalPrice}
-💵 Avans: ${avans}
-📞 ${phone1 || "-"} ${phone2 ? `/ ${phone2}` : ""}
+💵 Avans: ${prepayment}
+📞 ${phone || "-"}
 
 🆔 <code>${booking._id}</code>
 `;
 
-
-try {
+    try {
       await sendTelegramMessage(message);
     } catch (err) {
-      console.error(
-        "TELEGRAM ERROR:",
-        err.response?.status,
-        err.response?.data || err.message
-      );
+      console.error("TELEGRAM ERROR:", err.message);
     }
+
     return res.status(201).json({
       message: "Booking muvaffaqiyatli yaratildi",
       data: booking
     });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({
       message: "Booking yaratishda server xatosi"
     });
@@ -156,7 +150,7 @@ exports.updateBooking = async (req, res) => {
     const conflict = await Booking.findOne({
       _id: { $ne: booking._id },
       dachaId: booking.dachaId,
-      isActive: true,
+      status: { $in: ['confirmed', 'band'] },
       startDate: { $lte: newEnd },
       endDate: { $gte: newStart }
     });
@@ -171,9 +165,10 @@ exports.updateBooking = async (req, res) => {
     booking.endDate = newEnd;
 
     if (req.body.totalPrice !== undefined) booking.totalPrice = req.body.totalPrice;
-    if (req.body.avans !== undefined) booking.avans = req.body.avans;
-    if (req.body.phone1 !== undefined) booking.phone1 = req.body.phone1;
-    if (req.body.phone2 !== undefined) booking.phone2 = req.body.phone2;
+    if (req.body.prepayment !== undefined) booking.prepayment = req.body.prepayment;
+    if (req.body.phone !== undefined) booking.phone = req.body.phone;
+    if (req.body.name !== undefined) booking.name = req.body.name;
+    if (req.body.status !== undefined) booking.status = req.body.status;
 
     await booking.save();
 
@@ -194,13 +189,17 @@ exports.updateBooking = async (req, res) => {
 exports.getBookings = async (req, res) => {
   try {
     await deactivateExpiredBookings();
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     const dachas = await Dacha.find({ adminId: req.user.id }).select("_id");
     const dachaIds = dachas.map((d) => d._id);
 
     const bookings = await Booking.find({
       dachaId: { $in: dachaIds },
-      isActive: true
+      status: { $in: ['confirmed', 'band'] },
+      endDate: { $gte: today }
     })
       .populate("dachaId", "name")
       .sort({ startDate: 1 });
@@ -210,6 +209,7 @@ exports.getBookings = async (req, res) => {
       data: bookings
     });
   } catch (error) {
+    console.error("GET BOOKINGS ERROR:", error);
     return res.status(500).json({
       message: "Bookinglarni olishda server xatosi"
     });
@@ -292,8 +292,7 @@ exports.getPendingBookings = async (req, res) => {
 
     const pendingBookings = await Booking.find({
       dachaId: { $in: dachaIds },
-      status: 'pending',
-      isActive: true
+      status: 'pending'
     }).populate("dachaId", "name").sort({ createdAt: -1 });
 
     return res.json({
@@ -305,19 +304,35 @@ exports.getPendingBookings = async (req, res) => {
   }
 };
 
-exports.approveBooking = async (req, res) => {
+exports.confirmBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const booking = await Booking.findById(id);
+    const { totalPrice, prepayment, name, phone } = req.body;
 
+    const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ message: "Topilmadi" });
 
     const dacha = await Dacha.findOne({ _id: booking.dachaId, adminId: req.user.id });
     if (!dacha) return res.status(403).json({ message: "Ruxsat yo'q" });
 
-    booking.status = 'approved';
-    const { totalPrice } = req.body;
+    // Double check overlap before confirmation
+    const conflict = await Booking.findOne({
+      _id: { $ne: booking._id },
+      dachaId: booking.dachaId,
+      status: { $in: ['confirmed', 'band'] },
+      startDate: { $lte: booking.endDate },
+      endDate: { $gte: booking.startDate }
+    });
+
+    if (conflict) {
+      return res.status(409).json({ message: "Bu sanalarda allaqachon boshqa tasdiqlangan booking bor" });
+    }
+
+    booking.status = 'confirmed';
     if (totalPrice !== undefined) booking.totalPrice = totalPrice;
+    if (prepayment !== undefined) booking.prepayment = prepayment;
+    if (name !== undefined) booking.name = name;
+    if (phone !== undefined) booking.phone = phone;
 
     await booking.save();
     return res.json({ message: "Tasdiqlandi", data: booking });
@@ -326,7 +341,7 @@ exports.approveBooking = async (req, res) => {
   }
 };
 
-exports.declineBooking = async (req, res) => {
+exports.cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
     const booking = await Booking.findById(id);
@@ -336,7 +351,7 @@ exports.declineBooking = async (req, res) => {
     const dacha = await Dacha.findOne({ _id: booking.dachaId, adminId: req.user.id });
     if (!dacha) return res.status(403).json({ message: "Ruxsat yo'q" });
 
-    booking.status = 'declined';
+    booking.status = 'cancelled';
     booking.isActive = false;
     await booking.save();
 

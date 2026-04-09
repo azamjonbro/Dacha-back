@@ -9,7 +9,7 @@ const normalizeDate = (date) => {
 
 exports.getPublicDachas = async (req, res) => {
   try {
-    const dachas = await Dacha.find({ isActive: true }).select("_id name images video");
+    const dachas = await Dacha.find({ isActive: true }).select("_id name images video features location");
     
     const dachaIds = dachas.map(d => d._id);
     const today = new Date();
@@ -17,7 +17,7 @@ exports.getPublicDachas = async (req, res) => {
 
     const bookings = await Booking.find({
       dachaId: { $in: dachaIds },
-      isActive: true,
+      status: { $in: ['confirmed', 'band'] },
       endDate: { $gte: today } 
     }).select("startDate endDate dachaId");
     
@@ -37,9 +37,9 @@ exports.getPublicDachas = async (req, res) => {
 
 exports.createGuestBooking = async (req, res) => {
   try {
-    const { dachaId, startDate, endDate, phone1, OrderedUser } = req.body;
+    const { dachaId, startDate, endDate, phone, name } = req.body;
 
-    if (!dachaId || !startDate || !endDate || !phone1 || !OrderedUser) {
+    if (!dachaId || !startDate || !endDate || !phone || !name) {
       return res.status(400).json({ message: "Barcha kerakli maydonlarni to'ldiring" });
     }
 
@@ -57,7 +57,7 @@ exports.createGuestBooking = async (req, res) => {
 
     const conflict = await Booking.findOne({
       dachaId,
-      isActive: true,
+      status: { $in: ['confirmed', 'band'] },
       startDate: { $lte: end },
       endDate: { $gte: start }
     });
@@ -70,19 +70,18 @@ exports.createGuestBooking = async (req, res) => {
       dachaId,
       startDate: start,
       endDate: end,
-      OrderedUser,
-      phone1,
-      totalPrice: 0, // Admin will determine price later
-      avans: 0,
-      isActive: true,
+      name,
+      phone,
+      totalPrice: 0,
+      prepayment: 0,
       status: 'pending'
     });
 
     const message = `
-🌟 <b>YANGI GUEST BUYURTMA (LEAD - KUTILMOQDA)</b>
+🌟 <b>YANGI GUEST BUYURTMA (KUTILMOQDA)</b>
 
-👤 Mijoz: ${OrderedUser}
-📞 Tel: ${phone1}
+👤 Mijoz: ${name}
+📞 Tel: ${phone}
 🏠 Dacha: ${dacha.name}
 📅 ${start.toLocaleDateString("ru-RU")} → ${end.toLocaleDateString("ru-RU")}
 

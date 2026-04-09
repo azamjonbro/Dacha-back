@@ -19,7 +19,11 @@ exports.createDacha = async (req, res) => {
 
     const dacha = await Dacha.create({
       name: name.trim(),
-      adminId
+      adminId,
+      images: req.body.images || [],
+      video: req.body.video || "",
+      features: req.body.features || [],
+      location: req.body.location || ""
     });
 
     return res.status(201).json({
@@ -155,6 +159,7 @@ exports.getAllDachas = async (req, res) => {
           updatedAt: 1,
           images: 1,
           video: 1,
+          location: 1,
           booking: 1,
           admin: {
             _id: "$admin._id",
@@ -223,5 +228,22 @@ exports.deleteDacha = async (req, res) => {
     return res.status(500).json({
       message: "Dachani o‘chirishda server xatosi"
     });
+  }
+};
+exports.uploadFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Fayl yuklanmadi" });
+    }
+
+    const fileUrl = `/uploads/${req.file.filename}`;
+    return res.status(200).json({
+      message: "Fayl yuklandi",
+      url: fileUrl,
+      type: req.file.mimetype.startsWith("video") ? "video" : "image"
+    });
+  } catch (error) {
+    console.error("uploadFile error:", error);
+    return res.status(500).json({ message: "Fayl yuklashda xatolik" });
   }
 };

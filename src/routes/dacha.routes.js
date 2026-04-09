@@ -2,9 +2,11 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth.middleware");
 const role = require("../middleware/role.middleware");
+const upload = require("../middleware/upload.middleware");
 const c = require("../controllers/dacha.controller");
 
 router.use(auth, role("admin","superadmin"));
+router.post("/upload", upload.single("file"), c.uploadFile);
 router.post("/", c.createDacha);
 router.put("/:id", c.updateDacha);
 router.get("/", c.getAllDachas);

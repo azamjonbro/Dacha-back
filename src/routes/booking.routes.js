@@ -11,8 +11,9 @@ router.get("/", c.getBookings);
 router.get("/history", c.getBookingHistory);
 router.delete("/:id", c.deleteBooking);
 
-router.put("/:id/approve", c.approveBooking);
-router.delete("/:id/decline", c.declineBooking);
+router.patch("/:id/confirm", c.confirmBooking);
+router.patch("/:id/cancel", c.cancelBooking);
 router.get("/pending", c.getPendingBookings);
 
 module.exports = router;
+

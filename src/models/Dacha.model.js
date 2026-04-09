@@ -17,6 +17,14 @@ const dachaSchema = new Schema({
     type: String,
     default: ""
   },
+  features: {
+    type: [String],
+    default: []
+  },
+  location: {
+    type: String,
+    default: ""
+  },
   isActive: {
     type: Boolean,
     default: true

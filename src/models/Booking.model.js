@@ -6,30 +6,45 @@ const bookingSchema = new Schema({
     ref: "Dacha",
     required: true
   },
-  startDate: Date,
-  endDate: Date,
-  OrderedUser: String,
-
-  totalPrice: Number,
-  avans: Number,
-
-  phone1: String,
-  phone2: String,
-
-  createdBy: {
-    type: Schema.Types.ObjectId,
-    ref: "User"
+  startDate: {
+    type: Date,
+    required: true
+  },
+  endDate: {
+    type: Date,
+    required: true
+  },
+  name: {
+    type: String,
+    required: true
+  },
+  phone: {
+    type: String,
+    required: true
+  },
+  totalPrice: {
+    type: Number,
+    default: 0
+  },
+  prepayment: {
+    type: Number,
+    default: 0
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'declined'],
-    default: 'approved'
+    enum: ['pending', 'confirmed', 'finished', 'cancelled'],
+    default: 'pending'
   },
   isActive: {
     type: Boolean,
     default: true,
     index: true
+  },
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User"
   }
 }, { timestamps: true });
 
 module.exports = model("Booking", bookingSchema);
+
