@@ -153,6 +153,8 @@ exports.getAllDachas = async (req, res) => {
           isActive: 1,
           createdAt: 1,
           updatedAt: 1,
+          images: 1,
+          video: 1,
           booking: 1,
           admin: {
             _id: "$admin._id",

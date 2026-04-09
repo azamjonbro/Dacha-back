@@ -20,11 +20,16 @@ const bookingSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "User"
   },
-   isActive: {
-      type: Boolean,
-      default: true,
-      index: true
-    }
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'declined'],
+    default: 'approved'
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+    index: true
+  }
 }, { timestamps: true });
 
 module.exports = model("Booking", bookingSchema);

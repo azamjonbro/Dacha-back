@@ -9,6 +9,14 @@ const dachaSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "User"
   },
+  images: {
+    type: [String],
+    default: []
+  },
+  video: {
+    type: String,
+    default: ""
+  },
   isActive: {
     type: Boolean,
     default: true

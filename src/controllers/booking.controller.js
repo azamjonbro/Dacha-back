@@ -285,4 +285,63 @@ exports.deleteBooking = async (req, res) => {
   }
 };
 
+exports.getPendingBookings = async (req, res) => {
+  try {
+    const dachas = await Dacha.find({ adminId: req.user.id }).select("_id name");
+    const dachaIds = dachas.map((d) => d._id);
 
+    const pendingBookings = await Booking.find({
+      dachaId: { $in: dachaIds },
+      status: 'pending',
+      isActive: true
+    }).populate("dachaId", "name").sort({ createdAt: -1 });
+
+    return res.json({
+      count: pendingBookings.length,
+      data: pendingBookings
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Kutilayotgan bandlarni olishda xatolik" });
+  }
+};
+
+exports.approveBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+
+    if (!booking) return res.status(404).json({ message: "Topilmadi" });
+
+    const dacha = await Dacha.findOne({ _id: booking.dachaId, adminId: req.user.id });
+    if (!dacha) return res.status(403).json({ message: "Ruxsat yo'q" });
+
+    booking.status = 'approved';
+    const { totalPrice } = req.body;
+    if (totalPrice !== undefined) booking.totalPrice = totalPrice;
+
+    await booking.save();
+    return res.json({ message: "Tasdiqlandi", data: booking });
+  } catch (error) {
+    return res.status(500).json({ message: "Server xatosi" });
+  }
+};
+
+exports.declineBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+
+    if (!booking) return res.status(404).json({ message: "Topilmadi" });
+
+    const dacha = await Dacha.findOne({ _id: booking.dachaId, adminId: req.user.id });
+    if (!dacha) return res.status(403).json({ message: "Ruxsat yo'q" });
+
+    booking.status = 'declined';
+    booking.isActive = false;
+    await booking.save();
+
+    return res.json({ message: "Bekor qilindi" });
+  } catch (error) {
+    return res.status(500).json({ message: "Server xatosi" });
+  }
+};
