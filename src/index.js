@@ -6,9 +6,10 @@ const cors = require("cors");
 
 const app = express();
 app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT","PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  origin: true,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"]
 }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
