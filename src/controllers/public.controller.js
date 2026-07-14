@@ -4,7 +4,10 @@ const { sendTelegramMessage } = require("../utils/telegram");
 
 const normalizeDate = (date) => {
   const d = new Date(date);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const year = d.getUTCFullYear();
+  const month = d.getUTCMonth();
+  const day = d.getUTCDate();
+  return new Date(Date.UTC(year, month, day));
 };
 
 exports.getPublicDachas = async (req, res) => {

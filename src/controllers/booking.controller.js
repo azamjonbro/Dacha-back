@@ -3,7 +3,10 @@ const Dacha = require("../models/Dacha.model");
 const {sendTelegramMessage} = require("../utils/telegram")
 const normalizeDate = (date) => {
   const d = new Date(date);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const year = d.getUTCFullYear();
+  const month = d.getUTCMonth();
+  const day = d.getUTCDate();
+  return new Date(Date.UTC(year, month, day));
 };
 const deactivateExpiredBookings = async () => {
   const today = new Date();
@@ -134,11 +137,11 @@ exports.updateBooking = async (req, res) => {
     }
 
     const newStart = req.body.startDate
-      ? new Date(req.body.startDate + "T12:00:00")
+      ? normalizeDate(req.body.startDate)
       : booking.startDate;
 
     const newEnd = req.body.endDate
-      ? new Date(req.body.endDate + "T12:00:00")
+      ? normalizeDate(req.body.endDate)
       : booking.endDate;
 
     if (newStart > newEnd) {
