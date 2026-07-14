@@ -1,6 +1,7 @@
 const Booking = require("../models/Booking.model");
 const Dacha = require("../models/Dacha.model");
 const {sendTelegramMessage} = require("../utils/telegram")
+const { sendSMS } = require("../utils/sms");
 const normalizeDate = (date) => {
   const d = new Date(date);
   const year = d.getUTCFullYear();
@@ -338,6 +339,13 @@ exports.confirmBooking = async (req, res) => {
     if (phone !== undefined) booking.phone = phone;
 
     await booking.save();
+
+    // Send Confirmation SMS Notification to Guest
+    const customerName = booking.name || name || "Mijoz";
+    const customerPhone = booking.phone || phone;
+    const smsMessage = `Hurmatli ${customerName}\n\nBuyurtmangiz tasdiqlandi.\nBelgilangan sanada sizni kutamiz.\n\nDachabor`;
+    await sendSMS(customerPhone, smsMessage);
+
     return res.json({ message: "Tasdiqlandi", data: booking });
   } catch (error) {
     return res.status(500).json({ message: "Server xatosi" });
@@ -357,6 +365,12 @@ exports.cancelBooking = async (req, res) => {
     booking.status = 'cancelled';
     booking.isActive = false;
     await booking.save();
+
+    // Send Cancellation SMS Notification to Guest
+    const customerName = booking.name || "Mijoz";
+    const customerPhone = booking.phone;
+    const smsMessage = `Hurmatli ${customerName}\n\nBuyurtmangiz bekor qilindi.\nQo'shimcha ma'lumot uchun administrator bilan bog'laning.\n\nDachabor`;
+    await sendSMS(customerPhone, smsMessage);
 
     return res.json({ message: "Bekor qilindi" });
   } catch (error) {
