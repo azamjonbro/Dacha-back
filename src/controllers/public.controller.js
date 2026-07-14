@@ -1,6 +1,7 @@
 const Booking = require("../models/Booking.model");
 const Dacha = require("../models/Dacha.model");
 const { sendTelegramMessage } = require("../utils/telegram");
+const { sendSMS } = require("../utils/sms");
 
 const normalizeDate = (date) => {
   const d = new Date(date);
@@ -96,6 +97,10 @@ Iltimos, mijoz bilan bog'lanib rasmiylashtiring!
     } catch (err) {
       console.error("TELEGRAM ERROR:", err.message);
     }
+
+    // Send SMS Notification to Guest
+    const smsMessage = `Hurmatli ${name}\n\nSizning dachani band qilish arizangiz qabul qilindi.\nAdministrator tez orada siz bilan bog'lanadi.\n\nDachabor`;
+    await sendSMS(phone, smsMessage);
 
     return res.status(201).json({ 
       message: "Buyurtmangiz qabul qilindi, tez orada bog'lanamiz", 
